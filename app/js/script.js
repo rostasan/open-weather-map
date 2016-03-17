@@ -1,23 +1,55 @@
-/* 
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
+(function(){
 
+    angular.module('OWMApp', ['ngRoute', 'ngAnimate'])
 
-angular.module('App', ['ngRoutes'])
-      .config(['$routeProvider', function($routeProvider){
+        .config(['$routeProvider', function ($routeProvider) {
             $routeProvider.when('/', {
-              templateUrl: 'templates/home.html',
-              controller: 'homeCtrl'
-            }).when('/city', {
-              templateUrl: 'templates/city.html',
-              controller: 'cityCtrl'
+                templateUrl: 'templates/home.html',
+                controller: 'HomeCtrl'
+            })
+                .when('/cities/:city', {
+                    templateUrl: 'templates/city.html',
+                    controller: 'CityCtrl',
+                    resolve: {
+                        city: function(owmCities, $route, $location) {
+                            var city = $route.current.params.city;
+                            if(owmCities.indexOf(city) == -1 ) {
+                                $location.path('/error');
+                                return;
+                            }
+                            return city;
+                        }
+                    }
+                })
+                .when('/error', {
+                    template: '<p>Error Page Not Found</p>'
+                })
+                .otherwise('/error');
+        }])
+
+        .run('$rootScope', '$location', '$timeout', function ($rootScope, $location, $timeout) {
+            $rootScope.$on('routeChangeError', function () {
+                $location.path('/error');
             });
-      }])
-      .controller('homeCtrl', function($scope){
-      $scope.home = 'HOMMMMEEEE';
-      })
-      .controller('cityCtrl', function($scope){
-        $scope.city = 'New York';
-      });
+            $rootScope.$on('routeChangeStart', function () {
+                $rootScope.isLoading = true;
+            });
+            $rootScope.$on('routeChangeSuccess', function () {
+                $timeout(function () {
+                    $rootScope.isLoading = false;
+                }, 1000);
+
+            });
+        })
+
+        .value('owmCities', ['New York', 'Boston', 'Chicago'])
+
+        .controller('HomeCtrl', function ($scope) {
+            //empty for now
+        })
+        .controller('CityCtrl', function ($scope,$routeParams, city) {
+            $scope.city = city;
+        });
+
+
+}());
